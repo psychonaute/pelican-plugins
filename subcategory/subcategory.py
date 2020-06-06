@@ -15,6 +15,10 @@ from pelican.utils import (slugify, python_2_unicode_compatible)
 
 from six import text_type
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class SubCategory(URLWrapper):
     def __init__(self, name, parent, settings):
         super(SubCategory, self).__init__(name, settings)
@@ -71,6 +75,7 @@ def get_subcategories(generator, metadata):
     metadata['subcategories'] = sub_list
 
 def create_subcategories(generator):
+    generator.context['subcategory_tree'] = {}
     generator.subcategories = []
     for article in generator.articles:
         parent = article.category
@@ -88,6 +93,11 @@ def create_subcategories(generator):
                 generator.subcategories.append((new_sub, [article,]))
                 parent = new_sub
                 actual_subcategories.append(parent)
+                generator.context['subcategory_tree'].setdefault(parent.name.split('/')[0], []).append(parent)
+            logger.info(f"\n\n my subcategory_tree:\n")
+            logger.info(f"{generator.context['subcategory_tree']}")
+            logger.info(f"{generator.context['categories']}")
+            logger.info(f"\n\n")
         article.subcategories = actual_subcategories
         """Add subpath and suburl to the article metadata. This allows the
         the last subcategory's fullurl and savepath to be used when definining
@@ -102,6 +112,7 @@ def create_subcategories(generator):
             article.metadata['subpath'] = article.category.slug
             article.metadata['suburl'] = article.category.slug
 
+
 def generate_subcategories(generator, writer):
     write = partial(writer.write_file,
             relative_urls=generator.settings['RELATIVE_URLS'])
@@ -113,6 +124,8 @@ def generate_subcategories(generator, writer):
                 subcategory=subcat, articles=articles, dates=dates, 
                 template_name='subcategory', page_name=subcat.page_name,
                 all_articles=generator.articles)
+        # Add the new Subcat to the Pelican's global dict Context
+
 
 def generate_subcategory_feeds(generator, writer):
     for subcat, articles in generator.subcategories:
@@ -134,3 +147,4 @@ def register():
     signals.article_generator_context.connect(get_subcategories)
     signals.article_generator_finalized.connect(create_subcategories)
     signals.article_writer_finalized.connect(generate)
+
