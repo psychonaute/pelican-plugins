@@ -93,6 +93,7 @@ def create_subcategories(generator):
                 generator.subcategories.append((new_sub, [article,]))
                 parent = new_sub
                 actual_subcategories.append(parent)
+                # add a dict[category][subcategory] to context global variable
                 generator.context['subcategory_tree'].setdefault(parent.name.split('/')[0], []).append(parent)
             logger.info(f"\n\n my subcategory_tree:\n")
             logger.info(f"{generator.context['subcategory_tree']}")
